@@ -65,14 +65,22 @@ int main() {
             char *finalLevel = posLevel + 9;
             char *finalLogger = posLoggerName + 14;
             char *finalMessage = posMessage + 11;
+
+            // Start output
+            printf("%s[%s]", buf, finalLevel);
+
+            // Parse time
             long longTimeMillis = atol(finalTimeMillis);
             time_t timer = (time_t) longTimeMillis/1000;
             time(&timer);
             tm_info = gmtime(&timer);
             // tm_info = localtime(&timer);
-
             strftime(formattedTimeBuf, 26, "%Y-%m-%dT%H:%M:%S", tm_info);
-            printf("%s[%5s] %s.%sZ [%s][%s]: %s", buf, finalLevel, formattedTimeBuf, &(finalTimeMillis[strlen(finalTimeMillis)-3]), finalThread, finalLogger, finalMessage);
+            printf(" %s.%sZ ", formattedTimeBuf, &(finalTimeMillis[strlen(finalTimeMillis)-3]));
+
+            // Everything else
+            printf("[%s][%s]", finalThread, finalLogger);
+            printf(": %s", finalMessage);
 
             if (posThrown != NULL) {
                 if (posExtendedStackTrace != NULL) {
