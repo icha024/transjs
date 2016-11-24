@@ -3,7 +3,7 @@
 Transforms log4j2 JSON layout log files into a flat pattern layout.
 
 ## Build
-`gcc -o transjs main.c`
+`gcc -o transjs transjs.c`
 
 ## Install
 `sudo cp transjs /usr/local/bin/`
