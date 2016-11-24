@@ -1,6 +1,6 @@
-# transjs
+# TransJS
 
-Converts log4j2 JSON layout into a flat pattern layout
+Transforms log4j2 JSON layout log files into a flat pattern layout.
 
 ## Build
 `gcc -o transjs main.c`
