@@ -3,6 +3,17 @@
 #include <time.h>
 #include <stdlib.h>
 
+void terminatePrevious(char *buf, char *prev) {
+    if (prev == NULL) {
+        return;
+    }
+    if (buf[(prev - buf - 2)] == '"') {
+        buf[(prev - buf - 2)] = '\0';
+    } else {
+        buf[(prev - buf - 1)] = '\0';
+    }
+}
+
 int main() {
     const char *timeMillis = "\"timeMillis\"";
     const char *thread = "\"thread\"";
@@ -12,12 +23,14 @@ int main() {
     const char *thrown = "\"thrown\"";
     const char *endOfBatch = "\"endOfBatch\"";
     const char *loggerFqcn = "\"loggerFqcn\"";
+    const char *contextMap = "\"contextMap\"";
+    const char *extendedStackTrace = "\"extendedStackTrace\"";
     // const char *separator = "\",\"";
     
     char formattedTimeBuf[26];
     struct tm* tm_info;
 
-    // char buf[BUFSIZ];
+    // char buf[BUFSIZ]; // default is 8k
     char buf[32000];
     char *s;
     while (fgets(buf, sizeof buf, stdin)) {
@@ -29,49 +42,46 @@ int main() {
             char *posMessage = strstr(buf, message);
             char *posThrown = strstr(buf, thrown);
             char *posEndOfBatch = strstr(buf, endOfBatch);
-            // char *posLoggerFqcn = strstr(buf, loggerFqcn);
+            char *posLoggerFqcn = strstr(buf, loggerFqcn);
+            char *posContextMap = strstr(buf, contextMap);
+            char *posExtendedStackTrace = strstr(buf, extendedStackTrace);
             if (posTimeMillis == NULL || posThread == NULL || posLevel == NULL
              || posLoggerName == NULL || posMessage == NULL){
                 printf("%s", buf);
                 continue;
             }
-            buf[(posThread - buf - 1)] = '\0';
+            terminatePrevious(buf, posTimeMillis);
+            terminatePrevious(buf, posThread);
+            terminatePrevious(buf, posLevel);
+            terminatePrevious(buf, posLoggerName);
+            terminatePrevious(buf, posMessage);
+            terminatePrevious(buf, posThrown);
+            terminatePrevious(buf, posEndOfBatch);
+            terminatePrevious(buf, posLoggerFqcn);
+            terminatePrevious(buf, posContextMap);
+
             char *finalTimeMillis = posTimeMillis + 13;
-            // printf("TIME: %s\n", finalTimeMillis);
-
-            buf[(posLevel - buf - 2)] = '\0';
             char *finalThread = posThread + 10;
-            // printf("THREAD: %s\n", finalThread);
-            
-            buf[(posLoggerName - buf - 2)] = '\0';
             char *finalLevel = posLevel + 9;
-            // printf("Level: %s\n", finalLevel);
-
-            buf[(posMessage - buf - 2)] = '\0';
             char *finalLogger = posLoggerName + 14;
-            // printf("Logger: %s\n", finalLogger);
-
-            char *posMessageSeparator = posThrown;
-            if (posThrown == NULL) {
-                posMessageSeparator = posEndOfBatch;
-            }
-
-            buf[(posMessageSeparator - buf - 2)] = '\0';
             char *finalMessage = posMessage + 11;
-            // printf("Message: %s\n", finalMessage);
-
             long longTimeMillis = atol(finalTimeMillis);
             time_t timer = (time_t) longTimeMillis/1000;
             time(&timer);
             tm_info = gmtime(&timer);
+            // tm_info = localtime(&timer);
 
             strftime(formattedTimeBuf, 26, "%Y-%m-%dT%H:%M:%S", tm_info);
-            printf("[%s] %s.%sZ [%s][%s]: %s\n", finalLevel, formattedTimeBuf, &(finalTimeMillis[strlen(finalTimeMillis)-3]), finalThread, finalLogger, finalMessage);
+            printf("%s[%5s] %s.%sZ [%s][%s]: %s", buf, finalLevel, formattedTimeBuf, &(finalTimeMillis[strlen(finalTimeMillis)-3]), finalThread, finalLogger, finalMessage);
 
             if (posThrown != NULL) {
+                if (posExtendedStackTrace != NULL) {
+                    buf[(posExtendedStackTrace - buf - 1)] = '\0';
+                }
                 buf[(posEndOfBatch - buf - 2)] = '\0';
-                printf("[STACK] %s\n", posThrown + 9);
+                printf(" [%s]", posThrown + 10);
             }
+            printf("\n");
         } else {
             // line was truncated, just print out as is.
             printf("%s\n", buf);
