@@ -31,7 +31,7 @@ int main() {
     struct tm* tm_info;
 
     // char buf[BUFSIZ]; // default is 8k
-    char buf[32000];
+    char buf[32768];
     char *s;
     while (fgets(buf, sizeof buf, stdin)) {
         if (buf[strlen(buf)-1] == '\n') {
