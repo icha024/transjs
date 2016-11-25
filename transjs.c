@@ -7,14 +7,25 @@ void terminatePrevious(char *buf, char *prev) {
     if (prev == NULL) {
         return;
     }
-    if (buf[(prev - buf - 2)] == '"') {
+    if ((prev - buf - 2) > 1 && buf[(prev - buf - 2)] == '"') {
         buf[(prev - buf - 2)] = '\0';
-    } else {
+    } else if ((prev - buf) > 0) {
         buf[(prev - buf - 1)] = '\0';
     }
 }
 
-int main() {
+int main(int argc, char **argv) {
+    int compactPrint = 0;
+    if (argc >= 2) {
+        if (argv[1][0] == '-' && argv[1][1] == 'c') {
+            // printf("Using compact format.\n\n");
+            compactPrint = 1;
+        } else {
+            printf("-c \t Use compact format, omit date/time and non log4j2 JSON format lines.\n\n");
+            return 0;
+        }
+    }
+
     const char *timeMillis = "\"timeMillis\"";
     const char *thread = "\"thread\"";
     const char *level = "\"level\"";
@@ -47,7 +58,9 @@ int main() {
             char *posExtendedStackTrace = strstr(buf, extendedStackTrace);
             if (posTimeMillis == NULL || posThread == NULL || posLevel == NULL
              || posLoggerName == NULL || posMessage == NULL){
-                printf("%s", buf);
+                if (!compactPrint) {
+                    printf("%s", buf);
+                }
                 continue;
             }
             terminatePrevious(buf, posTimeMillis);
@@ -69,30 +82,36 @@ int main() {
             // Start output
             printf("%s[%s]", buf, finalLevel);
 
-            // Parse time
-            long longTimeMillis = atol(finalTimeMillis);
-            time_t timer = (time_t) longTimeMillis/1000;
-            time(&timer);
-            tm_info = gmtime(&timer);
-            // tm_info = localtime(&timer);
-            strftime(formattedTimeBuf, 26, "%Y-%m-%dT%H:%M:%S", tm_info);
-            printf(" %s.%sZ ", formattedTimeBuf, &(finalTimeMillis[strlen(finalTimeMillis)-3]));
+            if (!compactPrint) {
+                // Parse time
+                long longTimeMillis = atol(finalTimeMillis);
+                time_t timer = (time_t) longTimeMillis/1000;
+                time(&timer);
+                tm_info = gmtime(&timer);
+                // tm_info = localtime(&timer);
+                strftime(formattedTimeBuf, 26, "%Y-%m-%dT%H:%M:%S", tm_info);
+                printf(" %s.%sZ ", formattedTimeBuf, &(finalTimeMillis[strlen(finalTimeMillis)-3]));
+            }
 
             // Everything else
             printf("[%s][%s]", finalThread, finalLogger);
             printf(": %s", finalMessage);
 
             if (posThrown != NULL) {
-                if (posExtendedStackTrace != NULL) {
+                if (posExtendedStackTrace != NULL && posExtendedStackTrace - buf > 0) {
                     buf[(posExtendedStackTrace - buf - 1)] = '\0';
                 }
-                buf[(posEndOfBatch - buf - 2)] = '\0';
+                if (posEndOfBatch != NULL && posEndOfBatch - buf > 1) {
+                    buf[(posEndOfBatch - buf - 2)] = '\0';
+                }
                 printf(" [%s]", posThrown + 10);
             }
             printf("\n");
         } else {
-            // line was truncated, just print out as is.
-            printf("%s\n", buf);
+            if (!compactPrint) {
+                // line was truncated, just print out as is.
+                printf("%s\n", buf);
+            }
         }
     }
     return 0;
