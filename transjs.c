@@ -36,6 +36,8 @@ int main(int argc, char **argv) {
     const char *loggerFqcn = "\"loggerFqcn\"";
     const char *contextMap = "\"contextMap\"";
     const char *extendedStackTrace = "\"extendedStackTrace\"";
+    const char *threadId = "\"threadId\"";
+    const char *threadPriority = "\"threadPriority\"";
     // const char *separator = "\",\"";
     
     char formattedTimeBuf[26];
@@ -55,6 +57,8 @@ int main(int argc, char **argv) {
             char *posEndOfBatch = strstr(buf, endOfBatch);
             char *posLoggerFqcn = strstr(buf, loggerFqcn);
             char *posContextMap = strstr(buf, contextMap);
+            char *posThreadId = strstr(buf, threadId);
+            char *posThreadPriority = strstr(buf, threadPriority);
             char *posExtendedStackTrace = strstr(buf, extendedStackTrace);
             if (posTimeMillis == NULL || posThread == NULL || posLevel == NULL
              || posLoggerName == NULL || posMessage == NULL){
@@ -72,6 +76,8 @@ int main(int argc, char **argv) {
             terminatePrevious(buf, posEndOfBatch);
             terminatePrevious(buf, posLoggerFqcn);
             terminatePrevious(buf, posContextMap);
+            terminatePrevious(buf, posThreadId);
+            terminatePrevious(buf, posThreadPriority);
 
             char *finalTimeMillis = posTimeMillis + 13;
             char *finalThread = posThread + 10;
@@ -95,6 +101,11 @@ int main(int argc, char **argv) {
 
             // Everything else
             printf("[%s][%s]", finalThread, finalLogger);
+            
+            if (posThreadId != NULL) {
+                printf("[%s]", posContextMap);
+            }
+
             printf(": %s", finalMessage);
 
             if (posThrown != NULL) {
@@ -104,7 +115,7 @@ int main(int argc, char **argv) {
                 if (posEndOfBatch != NULL && posEndOfBatch - buf > 1) {
                     buf[(posEndOfBatch - buf - 2)] = '\0';
                 }
-                printf(" [%s]", posThrown + 10);
+                printf(" : %s", posThrown + 10);
             }
             printf("\n");
         } else {
